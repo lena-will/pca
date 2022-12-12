@@ -1,0 +1,190 @@
+---
+title: "Principal Component Analysis"
+output: html_document
+date: "2022-12-09"
+---
+
+# Housekeeping
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd('/Users/lena/documents/R/PCA')
+library(tidyverse)
+library(nnet)
+library(yardstick)
+library(devtools)
+library(ggbiplot)
+library(psych)
+library(MVN)
+```
+
+# Load and prepare the data
+
+```{r}
+df_wine <- data.table::fread("wine.data")
+colnames(df_wine) <- c("class", 
+                       "alcohol",
+                       "malic_acid", 
+                       "ash",
+                       "alca_ash",
+                       "magnesium",
+                       "total_phenols",
+                       "flav",
+                       "nonflav_phenols",
+                       "proan",
+                       "col_intens",
+                       "hue",
+                       "protein",
+                       "proline")
+df_wine
+```
+
+# A first glance
+
+```{r}
+
+df_wine %>% 
+  mutate(class = as.factor(class)) %>%  
+  ggplot(aes(malic_acid, ash, color = class)) +
+  geom_point()
+
+df_wine %>% 
+  mutate(class = as.factor(class)) %>%  
+  ggplot(aes(protein, flav, color = class)) +
+  geom_point()
+
+
+```
+
+# Barlett's sphericity test
+
+$H_0: P = I \text{ vs. }H_1: P \neq I$
+
+```{r}
+z_score <- function(x){
+  (x-mean(x))/sd(x)
+}
+
+data_testing <- df_wine %>% 
+  select(-class)
+data_testing <- data.frame(apply(data_testing, 2, z_score))
+
+cor_testing <- cor(data_testing)
+cortest.bartlett(cor_testing, n = nrow(data_testing))
+```
+
+We reject $H_0$. 
+Are they mvn distributed?
+
+# Test for multivariate normal distribution: Royston's H test
+$H_0$: data is multivariate normally distributed vs. $H_1$ not $H_0$
+
+```{r}
+mvn_test <- mvn(data_testing, mvnTest = "royston")
+mvn_test$multivariateNormality
+```
+We reject $H_0$ of multivariate normality.
+
+# Split into test and train and define x and y
+
+This is preparation for the classification later
+
+```{r}
+set.seed(48)
+df_wine <- df_wine %>% 
+  mutate(id = sample(x = c(0, 1), size = nrow(.), replace = TRUE, prob = c(.7, .3)))
+
+train <- df_wine %>% 
+  filter(id == 0) %>% 
+  select(-id)
+test <- df_wine %>% 
+  filter(id == 1) %>% 
+  select(-id)
+
+train_x <- train[, c(2:14)]
+train_y <- train[, 1]
+
+test_x <- test[, c(2:14)]
+test_y <- test[, 1]
+
+```
+
+# Standardise the x variables for PCA
+
+```{r}
+train_x <- data.frame(apply(train_x, 2, z_score))
+test_x <- data.frame(apply(test_x, 2, z_score))
+```
+
+# Principal Component Analysis
+
+```{r}
+pca_cov <- cov(train_x)
+pca_eigen <- eigen(pca_cov)
+pca_eigenvec <- pca_eigen$vectors
+pca_eigenval <- pca_eigen$values
+
+pc1 <- t(pca_eigenvec[,1])%*%t(train_x) # compute first PC on training data
+pc2 <- t(pca_eigenvec[,2])%*%t(train_x) # compute second PC on training data
+pc3 <- t(pca_eigenvec[,3])%*%t(train_x) # compute third PC on training data
+pc4 <- t(pca_eigenvec[,4])%*%t(train_x) # compute fourth PC on training data
+
+pca_eigenval <- data.frame(pca_eigenval) %>%
+  mutate(explained_var = pca_eigenval/sum(pca_eigenval)) %>% 
+  mutate(cum_var = cumsum(explained_var))
+
+pca_eigenval
+```
+
+# Visualisation: Number of principal components
+Slides
+
+# Visualisation: Interpretation of the principal components 
+Slides
+
+
+# Classification with logit regression
+
+```{r}
+train$PC1 <- t(pc1)
+train$PC2 <- t(pc2)
+
+logistic_classification <- multinom(class ~ PC1 + PC2,
+                               data = train)
+
+```
+
+# Predict on test data
+
+```{r}
+pc1_test <- t(pca_eigenvec[,1])%*%t(test_x)
+pc2_test <- t(pca_eigenvec[,2])%*%t(test_x) 
+test_x$PC1 <- as.numeric(t(pc1_test))
+test_x$PC2 <- as.numeric(t(pc2_test))
+
+logit_predict <- predict(logistic_classification, test_x)
+logit_predict
+
+```
+
+# Model Evaluation
+
+```{r}
+validation <- cbind(logit_predict, test_y)
+validation <- data.frame(validation) %>% 
+  mutate(class = as.factor(class)) %>% 
+  mutate(compare = if_else(logit_predict == class, TRUE, FALSE))
+validation
+
+accuracy <- (sum(validation$compare))/nrow(validation)
+
+conf_matrix <- conf_mat(validation, class, logit_predict)
+
+conf_matrix %>% 
+  autoplot(type = "heatmap") +
+  scale_fill_gradient(low="#D6EAF8",high = "#2E86C1") +
+  theme(legend.position = "right") +
+  labs(fill = "Abs. freq")
+accuracy
+
+```
