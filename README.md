@@ -1,5 +1,5 @@
 # Principal Component Analysis
-This repository contains the code to a principal component analysis and to an autoencoder, both using the wine dataset.
+This repository looks at dimensionality reduction techniques. It contains the code to a principal component analysis and to an autoencoder, both using the wine dataset.
 
 ## Getting started
 Start by cloning the Git repository:
