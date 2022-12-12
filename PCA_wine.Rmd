@@ -36,7 +36,7 @@ colnames(df_wine) <- c("class",
                        "hue",
                        "protein",
                        "proline")
-df_wine
+
 ```
 
 # A first glance
@@ -52,7 +52,6 @@ df_wine %>%
   mutate(class = as.factor(class)) %>%  
   ggplot(aes(protein, flav, color = class)) +
   geom_point()
-
 
 ```
 
@@ -132,7 +131,6 @@ pc4 <- t(pca_eigenvec[,4])%*%t(train_x) # compute fourth PC on training data
 pca_eigenval <- data.frame(pca_eigenval) %>%
   mutate(explained_var = pca_eigenval/sum(pca_eigenval)) %>% 
   mutate(cum_var = cumsum(explained_var))
-
 pca_eigenval
 ```
 
@@ -177,6 +175,7 @@ validation <- data.frame(validation) %>%
 validation
 
 accuracy <- (sum(validation$compare))/nrow(validation)
+accuracy
 
 conf_matrix <- conf_mat(validation, class, logit_predict)
 
@@ -185,6 +184,5 @@ conf_matrix %>%
   scale_fill_gradient(low="#D6EAF8",high = "#2E86C1") +
   theme(legend.position = "right") +
   labs(fill = "Abs. freq")
-accuracy
 
 ```

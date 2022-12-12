@@ -1,5 +1,5 @@
 ## Housekeeping
-setwd('/Users/lena/documents/R/PCA')
+setwd('/Users/lena/git/pca')
 library(tidyverse)
 library(geomtextpath)
 library(nnet)
@@ -8,8 +8,7 @@ library(devtools)
 library(ggbiplot)
 library(psych)
 library(MVN)
-library(Matrix)
-library(expm)
+library(reshape2)
 
 ## Load and prepare data
 df_wine <- data.table::fread("wine.data")
@@ -58,6 +57,12 @@ cortest.bartlett(cor_testing, n = nrow(data_testing))
 mvn_test <- mvn(data_testing, mvnTest = "royston")
 mvn_test$multivariateNormality
 # We fail to reject H0. The underlying data is not multivariate normally distributed.
+
+## heatmap for correlation between variables
+
+melt_cor_testing <- melt(cor_testing)
+ggplot(data = melt_cor_testing, aes(Var2, Var1, fill = value))+
+  geom_tile()
 
 ## Split into test and train and define x and y
 
