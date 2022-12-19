@@ -2,6 +2,7 @@
 setwd('/Users/lena/documents/R/PCA')
 library(tidyverse)
 library(keras)
+library(tensorflow)
 
 ## Load and prepare data
 df_wine <- data.table::fread("wine.data")
@@ -54,7 +55,7 @@ train_x <- apply(train_x, 2, z_score)
 test_x <- apply(test_x, 2, z_score)
 
 ## define autoencoder
-
+set_random_seed(123)
 code_size <- 2
 encoder_input <- layer_input(shape = ncol(train_x))
 
