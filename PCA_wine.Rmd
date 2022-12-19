@@ -36,7 +36,6 @@ colnames(df_wine) <- c("class",
                        "hue",
                        "protein",
                        "proline")
-
 ```
 
 # A first glance
@@ -118,8 +117,8 @@ test_x <- data.frame(apply(test_x, 2, z_score))
 # Principal Component Analysis
 
 ```{r}
-pca_cov <- cov(train_x)
-pca_eigen <- eigen(pca_cov)
+pca_cor <- cor(train_x)
+pca_eigen <- eigen(pca_cor)
 pca_eigenvec <- pca_eigen$vectors
 pca_eigenval <- pca_eigen$values
 
