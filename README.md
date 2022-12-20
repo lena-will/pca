@@ -7,4 +7,4 @@ Start by cloning the Git repository:
 git clone https://github.com/lena-will/pca.git
 ```
 ## Data
-I use the wine dataset from UCI's machine learning repositiry. The data and description can be found here: https://archive.ics.uci.edu/ml/datasets/wine
+I use the wine dataset from UCI's machine learning repository. The data and description can be found here: https://archive.ics.uci.edu/ml/datasets/wine
